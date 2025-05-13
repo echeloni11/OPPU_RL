@@ -119,6 +119,8 @@ training_arguments = transformers.TrainingArguments(
     group_by_length=True,
     lr_scheduler_type='linear',
     report_to='none',
+    save_strategy="no",  # 禁用检查点保存
+    save_total_limit=0,  # 不保存任何检查点
 )
 
 
@@ -136,11 +138,11 @@ elif args.task_name == "news_categorize":
 elif args.task_name == "news_headline":
     extract_article = extract_news_headline
 elif args.task_name == "product_rating":
-    extract_article = extrat_product_review
+    extract_article = extract_product_review
 elif args.task_name == "scholarly_title":
     extract_article = extract_scholarly_title
 elif args.task_name == "tweet_paraphrase":
-    extract_article = extrat_tweet_paraphrasing
+    extract_article = extract_tweet_paraphrasing
 
 
 with open('./prompt/prompt.json', 'r') as f:
@@ -258,7 +260,7 @@ for i in tqdm(range(len(train))):
             }
         )
 
-print(train_data)
+# print(train_data)
 
 train_dataset = Dataset.from_list(train_data)
 train_dataset = train_dataset.map(generate_and_tokenize_prompt).shuffle()

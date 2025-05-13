@@ -1,0 +1,6 @@
+data/*
+ckpt/*
+output/*
+trl/*
+output*
+logs/*

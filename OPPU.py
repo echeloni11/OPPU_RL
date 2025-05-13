@@ -26,6 +26,7 @@ parser.add_argument('--task_name', type=str, default='movie_tagging')
 parser.add_argument('--add_profile', action='store_true')
 parser.add_argument('--task_lora', type=str, default='./ckpt/movie_tagging/k1-movie_tagging-Llama-2-7b-hf-task_LoRA_ckpt')
 parser.add_argument('--access_token', type=str, default=None)
+parser.add_argument('--num_users', type=int, default=None)
 
 args = parser.parse_args()
 model_name = args.model_name
@@ -121,6 +122,8 @@ training_arguments = transformers.TrainingArguments(
     group_by_length=True,
     lr_scheduler_type='linear',
     report_to='none',
+    save_strategy='no',
+    save_total_limit=0
 )
 
 
@@ -138,13 +141,13 @@ elif args.task_name == "news_headline":
     extract_article = extract_news_headline
     format_flag = True
 elif args.task_name == "product_rating":
-    extract_article = extrat_product_review
+    extract_article = extract_product_review
     format_flag = True
 elif args.task_name == "scholarly_title":
     extract_article = extract_scholarly_title
     format_flag = True
 elif args.task_name == "tweet_paraphrase":
-    extract_article = extrat_tweet_paraphrasing
+    extract_article = extract_tweet_paraphrasing
 
 
 with open('./prompt/prompt.json', 'r') as f:
@@ -214,6 +217,9 @@ actual = []
 train_data = []
 
 for i in tqdm(range(len(test_data))):
+    if args.num_users is not None and i >= args.num_users:
+        break
+
     model = get_peft_model(base_model, peft_config)
     print_trainable_parameters(model)
 
@@ -222,7 +228,7 @@ for i in tqdm(range(len(test_data))):
 
     for idx, q in enumerate(test_data[i]['profile']):
         for key, value in q.items():
-            q[key] = get_first_k_tokens(q[key], 768)
+            q[key] = get_first_k_tokens(str(q[key]), 768)
             
         prompt = prompt_template[args.task_name]['OPPU_input'].format(**q)
         full_prompt = prompt_template[args.task_name]['OPPU_full'].format(**q)
@@ -232,7 +238,7 @@ for i in tqdm(range(len(test_data))):
 
             for p in visible_history_list:
                 for key, value in p.items():
-                    p[key] = get_first_k_tokens(p[key], 768)
+                    p[key] = get_first_k_tokens(str(p[key]), 768)
 
             history_list = [prompt_template[args.task_name]['retrieval_history'].format(**p) for p in visible_history_list]
             tokenized_corpus = [doc.split(" ") for doc in history_list]
@@ -292,7 +298,7 @@ for i in tqdm(range(len(test_data))):
         visible_history_list = test_data[i]['profile']
         for p in visible_history_list:
             for key, value in p.items():
-                p[key] = get_first_k_tokens(p[key], 368)
+                p[key] = get_first_k_tokens(str(p[key]), 368)
 
         history_list = [prompt_template[args.task_name]['retrieval_history'].format(**p) for p in visible_history_list]
 
@@ -369,9 +375,13 @@ output_file = {
     'model': model_name,
 }
 
+import os
+output_dir = './output/{}/'.format(args.task_name)
+os.makedirs(output_dir, exist_ok=True)
+
 if args.add_profile:
-    with open('./output/{}/output-OPPU-k{}-{}-{}-profile.json'.format(args.k, args.task_name, args.task_name, model_name.split('/')[-1]), 'w') as f:
+    with open('{}/output-OPPU-k{}-{}-{}-profile.json'.format(output_dir, args.k, args.task_name, model_name.split('/')[-1]), 'w') as f:
         json.dump(output_file, f, indent=4)
 else:
-    with open('./output/{}/output-OPPU-k{}-{}-{}.json'.format(args.k, args.task_name, args.task_name, model_name.split('/')[-1]), 'w') as f:
+    with open('{}/output-OPPU-k{}-{}-{}.json'.format(output_dir, args.k, args.task_name, model_name.split('/')[-1]), 'w') as f:
         json.dump(output_file, f, indent=4)
