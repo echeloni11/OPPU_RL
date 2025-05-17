@@ -11,3 +11,4 @@ __pycache__/*
 *.pyw
 *.pyz
 results/*
+.vscode/*
