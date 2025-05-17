@@ -381,5 +381,5 @@ if args.add_profile:
     with open('./output/{}/output-task-k{}-{}-{}-profile.json'.format(args.k, args.task_name, args.task_name, model_name.split('/')[-1]), 'w') as f:
         json.dump(output_file, f, indent=4)
 else:
-    with open('./output/{}/output-task-k{}-{}-{}.json'.format(args.k, args.task_name, args.task_name, model_name.split('/')[-1]), 'w') as f:
+    with open('./output/{}/output-task-k{}-{}-{}.json'.format(args.task_name, args.k, args.task_name, model_name.split('/')[-1]), 'w') as f:
         json.dump(output_file, f, indent=4)

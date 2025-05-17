@@ -4,3 +4,9 @@ output/*
 trl/*
 output*
 logs/*
+__pycache__/*
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz

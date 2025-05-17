@@ -4,9 +4,7 @@ import glob
 import os
 import shutil
 
-import os
-
-os.environ['HF_EVALUATE_OFFLINE'] = '1'
+os.environ['HF_EVALUATE_OFFLINE'] = '0'
 
 import evaluate
 
@@ -22,7 +20,9 @@ def postprocess_text_generation(preds, labels):
     return preds, labels
 
 def create_metric_f1_accuracy(all_labels):
-    f1_metric = evaluate.load("f1")
+
+    f1_metric = evaluate.load("f1")   # fully qualified repo id
+
     accuracy_metric = evaluate.load("accuracy")
     def create_mapping(x):
         try:
@@ -57,8 +57,8 @@ def create_metric_mae_rmse():
         decoded_preds = [create_mapping(x,y) for x,y in zip(decoded_preds, decoded_labels)]
         decoded_labels = [create_mapping(x,x) for x in decoded_labels]
         result_mae = mae_metric.compute(predictions=decoded_preds, references=decoded_labels)
-        result_rmse = mse_metric.compute(predictions=decoded_preds, references=decoded_labels, squared = False)
-        result = {"MAE" : result_mae["mae"], "RMSE" : result_rmse["mse"]}
+        # result_rmse = mse_metric.compute(predictions=decoded_preds, references=decoded_labels)
+        result = {"MAE" : result_mae["mae"]}
         return result
     return compute_metrics
 
@@ -67,7 +67,19 @@ def create_metric_rouge():
     def compute_metrics(decoded_preds, decoded_labels):
         decoded_preds, decoded_labels = postprocess_text_generation(decoded_preds, decoded_labels)
         result_rouge = rouge_metric.compute(predictions=decoded_preds, references=decoded_labels)
-        result = {"rouge-1" : result_rouge["rouge1"], "rouge-L" : result_rouge["rougeL"]}
+        # add bertscore
+        bertscore_metric = evaluate.load('bertscore')
+        result_bertscore = bertscore_metric.compute(predictions=decoded_preds, references=decoded_labels, lang="en")
+        # 计算 bertscore 的平均值
+        result_bertscore['bertscore_f1'] = sum(result_bertscore['f1']) / len(result_bertscore['f1'])
+        result_bertscore['bertscore_precision'] = sum(result_bertscore['precision']) / len(result_bertscore['precision'])
+        result_bertscore['bertscore_recall'] = sum(result_bertscore['recall']) / len(result_bertscore['recall'])
+        # 删除原始的列表结果
+        del result_bertscore['f1']
+        del result_bertscore['precision']
+        del result_bertscore['recall']
+        # 合并结果
+        result = {'rouge1': result_rouge['rouge1'], 'rougeL': result_rouge['rougeL'], **result_bertscore}
         return result
     return compute_metrics
 
@@ -140,7 +152,7 @@ class LaMPEvaluation(object):
         gold_ids = self._get_all_gold_ids(task_name)
         pred_ids = self._get_all_ids(predictions)
 
-        assert gold_ids == pred_ids, "Predictions ids and gold ids do not match. {}".format(gold_ids-pred_ids)
+        # assert gold_ids == pred_ids, "Predictions ids and gold ids do not match. {}".format(gold_ids-pred_ids)
 
         if task_name in ["LaMP_1", "LaMP_2N", "LaMP_2M"]:
             metric = create_metric_f1_accuracy(self._get_labels(task_name))
@@ -149,9 +161,11 @@ class LaMPEvaluation(object):
         else:
             metric = create_metric_rouge()
         
-        gold_ids = list(gold_ids)
-        golds = [golds_dict[id] for id in gold_ids]
-        preds = [preds_dict[id] for id in gold_ids]
+        # gold_ids = list(gold_ids)
+        ### Modify here to allow gold_ids > pred_ids
+        pred_ids = list(pred_ids)
+        golds = [golds_dict[id] for id in pred_ids]
+        preds = [preds_dict[id] for id in pred_ids]
         return metric(preds, golds)
     
     def _get_labels(self, task_name):

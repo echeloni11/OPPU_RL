@@ -71,7 +71,7 @@ from rewards import get_reward_func_for_task
 parser = argparse.ArgumentParser(description="LoRA RFT with GRPO")
 parser.add_argument("--model_name", default="meta-llama/Llama-2-7b-hf")
 parser.add_argument("--task_name", default="movie_tagging")
-parser.add_argument("--batch_size", type=int, default=8,
+parser.add_argument("--batch_size", type=int, default=4,
                     help="per‑device prompt batch size (== num groups)")
 parser.add_argument("--k", type=int, default=0,
                     help="#history snippets to retrieve")
@@ -460,7 +460,7 @@ output_file = {
 }
 
 import os
-output_dir = './output/{}/'.format(args.task_name)
+output_dir = './output_final/{}/'.format(args.task_name)
 os.makedirs(output_dir, exist_ok=True)
 
 if args.add_profile:

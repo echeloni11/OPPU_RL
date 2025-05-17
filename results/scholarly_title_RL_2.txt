@@ -1,0 +1,1 @@
+{"rouge1": 0.277335424994761, "rougeL": 0.181645967521915, "hashcode": "roberta-large_L17_no-idf_version=0.3.12(hug_trans=4.51.3)", "bertscore_f1": 0.8766889274120331, "bertscore_precision": 0.8825672507286072, "bertscore_recall": 0.8712091624736786}

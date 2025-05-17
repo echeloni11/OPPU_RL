@@ -292,8 +292,9 @@ def _single_score(preds, refs):
 
     rewards = []
     for bp, rp, pred in zip(bert_p, rougeL_f1, preds):
-        score = 0.5*bp + 0.5*rp
-        len_penalty = max(0, len(pred.split()) - len(refs[0].split())) / len(refs[0].split())
+        # score = 0.5*bp + 0.5*rp
+        score = rp
+        len_penalty = max(0, len(pred.split()) - len(refs[0].split())) / len(refs[0].split()) * 0.03
         rewards.append(float(score - len_penalty))
     return rewards
 
